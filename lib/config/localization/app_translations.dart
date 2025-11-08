@@ -48,6 +48,7 @@ class AppTranslations extends Translations {
           'error_text_too_long': 'Input too long! Maximum 8 characters (64-bit) for this algorithm.',
           'error_key_too_long': 'Key too long! Maximum 8 characters (64-bit) for this algorithm.',
           'key_max_reached': 'Key has reached maximum (@count digits for @size).',
+          'error_hill_key_not_invertible': 'Key matrix for Hill Cipher @size is not invertible modulo 37. Please use a different key.',
           'algo_not_recognized': 'Algorithm not recognized.',
           
           // Profile Page
@@ -63,6 +64,14 @@ class AppTranslations extends Translations {
           'followers': 'Followers',
           'dark_mode': 'Dark Mode',
           'buy_coffee': 'Buy Me a Coffee',
+          'stats_cached_offline': 'Showing cached GitHub stats while offline.',
+          'stats_cached_stale_offline': 'Showing cached GitHub stats (might be outdated) because you are offline.',
+          'stats_cached_rate_limited': 'Showing cached GitHub stats due to GitHub rate limits.',
+          'stats_cached': 'Showing cached GitHub stats.',
+          'stats_error_offline_no_cache': 'Offline and no cached GitHub data available.',
+          'stats_error_rate_limited': 'GitHub rate limit reached. Please try again later.',
+          'stats_error_not_found': 'GitHub user not found.',
+          'stats_error_unknown': 'Unexpected error while loading GitHub stats.',
         },
         'id_ID': {
           // App Bar
@@ -109,6 +118,7 @@ class AppTranslations extends Translations {
           'error_text_too_long': 'Input terlalu panjang! Maksimum 8 karakter (64-bit) untuk algoritma ini.',
           'error_key_too_long': 'Kunci terlalu panjang! Maksimum 8 karakter (64-bit) untuk algoritma ini.',
           'key_max_reached': 'Kunci sudah mencapai maksimum (@count angka untuk @size).',
+          'error_hill_key_not_invertible': 'Matriks kunci untuk Hill Cipher @size tidak dapat dibalik modulo 37. Gunakan kunci lainnya.',
           'algo_not_recognized': 'Algoritma tidak dikenali.',
           
           // Profile Page
@@ -124,6 +134,14 @@ class AppTranslations extends Translations {
           'followers': 'Pengikut',
           'dark_mode': 'Mode Gelap',
           'buy_coffee': 'Belikan Saya Kopi',
+          'stats_cached_offline': 'Menampilkan statistik GitHub dari cache karena offline.',
+          'stats_cached_stale_offline': 'Menampilkan statistik GitHub dari cache (mungkin tidak terbaru) karena offline.',
+          'stats_cached_rate_limited': 'Menampilkan statistik GitHub dari cache karena batas permintaan GitHub tercapai.',
+          'stats_cached': 'Menampilkan statistik GitHub dari cache.',
+          'stats_error_offline_no_cache': 'Offline dan tidak ada data GitHub yang tersimpan.',
+          'stats_error_rate_limited': 'Batas permintaan GitHub tercapai. Coba lagi nanti.',
+          'stats_error_not_found': 'Pengguna GitHub tidak ditemukan.',
+          'stats_error_unknown': 'Terjadi kesalahan saat memuat statistik GitHub.',
         },
       };
 }

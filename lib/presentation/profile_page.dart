@@ -1,155 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../config/theme/theme_controller.dart';
 import '../config/theme/theme.dart';
 import '../config/localization/language_controller.dart';
-import '../data/github_service.dart';
+import 'controllers/profile_controller.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
-
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
-  final GitHubService _gitHubService = GitHubService();
-  Map<String, dynamic>? _githubStats;
-  bool _isLoading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadGitHubStats();
-  }
-
-  Future<void> _loadGitHubStats() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      print('Starting to load GitHub stats...');
-      final stats = await _gitHubService.getUserStats('ilhamghaza');
-      print('Received stats: $stats');
-
-      if (mounted) {
-        setState(() {
-          _githubStats = stats;
-          _isLoading = false;
-        });
-      }
-    } catch (e, stackTrace) {
-      print('Error loading GitHub stats: $e');
-      print('Stack trace: $stackTrace');
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _launchURL(String url) async {
-    if (!await launchUrl(Uri.parse(url))) {
-      throw Exception('Could not launch $url');
-    }
-  }
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>()
+        : Get.put(ProfileController());
     final themeController = Get.find<ThemeController>();
-    
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
+
     return Obx(() {
       final isDarkMode = themeController.isDarkMode;
       final theme = isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
+      final statsData = controller.statsData;
+      final statusMessageKey = controller.statusMessageKey;
+      final statusMessage = statusMessageKey?.tr;
+
       return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 240.0,
-                floating: false,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.primaryContainer,
-                        ],
-                      ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: CustomScrollView(
+          slivers: [
+            // Profile Header
+            SliverAppBar(
+              expandedHeight: isWideScreen ? 280 : 240,
+              floating: false,
+              pinned: true,
+              stretch: true,
+              backgroundColor: theme.colorScheme.primary,
+              flexibleSpace: FlexibleSpaceBar(
+                centerTitle: true,
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
                     ),
-                    child: Stack(
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: BackgroundPatternPainter(
-                              color:
-                                  theme.colorScheme.onPrimary.withOpacity(0.1),
-                            ),
-                          ),
-                        ),
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: theme.colorScheme.onPrimary,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: _isLoading
-                                    ? const CircleAvatar(
-                                        radius: 50,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : CircleAvatar(
-                                        radius: 50,
-                                        backgroundImage:
-                                            _githubStats?['avatar_url'] != null
-                                                ? NetworkImage(
-                                                    _githubStats!['avatar_url'])
-                                                : null,
-                                        child: _githubStats?['avatar_url'] ==
-                                                null
-                                            ? const Icon(Icons.person, size: 50)
-                                            : null,
-                                      ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                _githubStats?['name'] ?? 'Loading...',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .displayLarge
-                                    ?.copyWith(
-                                      color: theme.colorScheme.onPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 24,
-                                    ),
-                              ),
-                              Text(
-                                '@IlhamGhaza',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      color: theme.colorScheme.onPrimary
-                                          .withOpacity(0.8),
-                                    ),
+                        // Avatar
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
                               ),
                             ],
+                          ),
+                          child: controller.isLoading.value
+                              ? const CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.white,
+                                  child: CircularProgressIndicator(),
+                                )
+                              : CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.white,
+                                  backgroundImage:
+                                      statsData?['avatar_url'] != null &&
+                                          (statsData?['avatar_url'] as String)
+                                              .isNotEmpty
+                                      ? NetworkImage(statsData!['avatar_url'])
+                                      : null,
+                                  child:
+                                      statsData?['avatar_url'] == null ||
+                                          (statsData?['avatar_url'] as String)
+                                              .isEmpty
+                                      ? Icon(
+                                          Icons.person,
+                                          size: 50,
+                                          color: theme.colorScheme.primary,
+                                        )
+                                      : null,
+                                ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Name
+                        Text(
+                          statsData?['name'] ?? 'Loading...',
+                          style: theme.textTheme.displayMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Username
+                        Text(
+                          '@IlhamGhaza',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -157,217 +116,203 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    spacing: 24,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
+            ),
+
+            // Content
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isWideScreen ? 24 : 20,
+                vertical: 24,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // About Me Section
+                        _buildSection(
+                          theme: theme,
+                          title: 'about_me'.tr,
+                          icon: Icons.person_outline_rounded,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'job_title'.tr,
+                                style: theme.textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 12),
+                              Text('bio'.tr, style: theme.textTheme.bodyMedium),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.person_outline,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'about_me'.tr,
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24),
-                            Text(
-                              'job_title'.tr,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'bio'.tr,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.code,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'github_stats'.tr,
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24),
-                            _isLoading
-                                ? Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(20.0),
-                                      child: Column(
+
+                        const SizedBox(height: 20),
+
+                        // GitHub Stats Section
+                        _buildSection(
+                          theme: theme,
+                          title: 'github_stats'.tr,
+                          icon: Icons.code_rounded,
+                          child: Builder(
+                            builder: (context) {
+                              if (controller.isLoading.value) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(20.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              }
+
+                              if (controller.error.value != null) {
+                                return Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline_rounded,
+                                        size: 48,
+                                        color: theme.colorScheme.error,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'error_loading_stats'.tr,
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              color: theme.colorScheme.error,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        controller.errorCode.value != null
+                                            ? controller.errorCode.value!.tr
+                                            : controller.error.value!,
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.bodySmall,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      TextButton.icon(
+                                        onPressed: controller.loadGitHubStats,
+                                        icon: const Icon(Icons.refresh_rounded),
+                                        label: Text('retry'.tr),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor:
+                                              theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+
+                              return Column(
+                                children: [
+                                  if (statusMessage != null)
+                                    Container(
+                                      width: double.infinity,
+                                      margin: const EdgeInsets.only(bottom: 20),
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Row(
                                         children: [
-                                          const CircularProgressIndicator(),
-                                          const SizedBox(height: 16),
-                                          Text('loading_stats'.tr),
+                                          Icon(
+                                            Icons.info_outline_rounded,
+                                            size: 20,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              statusMessage,
+                                              style: theme.textTheme.bodyMedium,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
-                                  )
-                                : _error != null
-                                    ? Center(
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              'error_loading_stats'.tr,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    color:
-                                                        theme.colorScheme.error,
-                                                  ),
-                                            ),
-                                            TextButton(
-                                              onPressed: _loadGitHubStats,
-                                              child: Text('retry'.tr),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          _buildStatItem(
-                                            context,
-                                            Icons.star_border,
-                                            'stars'.tr,
-                                            _githubStats?['stars'].toString() ??
-                                                '0',
-                                            theme.colorScheme.primary,
-                                          ),
-                                          _buildStatItem(
-                                            context,
-                                            Icons.source_outlined,
-                                            'repositories'.tr,
-                                            _githubStats?['public_repos']
-                                                    .toString() ??
-                                                '0',
-                                            theme.colorScheme.secondary,
-                                          ),
-                                          _buildStatItem(
-                                            context,
-                                            Icons.people_outline,
-                                            'followers'.tr,
-                                            _githubStats?['followers']
-                                                    .toString() ??
-                                                '0',
-                                            theme.colorScheme.primary,
-                                          ),
-                                        ],
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      _buildStatItem(
+                                        theme: theme,
+                                        icon: Icons.star_rounded,
+                                        label: 'stars'.tr,
+                                        value:
+                                            statsData?['stars'].toString() ??
+                                            '0',
+                                        color: theme.colorScheme.primary,
                                       ),
-                          ],
-                        ),
-                      ),
-                      //list for theme
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          leading: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            child: Icon(
-                              isDarkMode
-                                  ? Icons.dark_mode
-                                  : Icons.light_mode,
-                              key: ValueKey(isDarkMode),
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                                      _buildStatItem(
+                                        theme: theme,
+                                        icon: Icons.folder_rounded,
+                                        label: 'repositories'.tr,
+                                        value:
+                                            statsData?['public_repos']
+                                                .toString() ??
+                                            '0',
+                                        color: theme.colorScheme.secondary,
+                                      ),
+                                      _buildStatItem(
+                                        theme: theme,
+                                        icon: Icons.people_rounded,
+                                        label: 'followers'.tr,
+                                        value:
+                                            statsData?['followers']
+                                                .toString() ??
+                                            '0',
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
                           ),
-                          title: Text(
-                            'dark_mode'.tr,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Theme Toggle
+                        _buildSettingTile(
+                          theme: theme,
+                          icon: isDarkMode
+                              ? Icons.dark_mode_rounded
+                              : Icons.light_mode_rounded,
+                          title: 'dark_mode'.tr,
                           trailing: Switch(
                             value: isDarkMode,
                             onChanged: (value) {
                               themeController.setThemeMode(
-                                  value ? ThemeMode.dark : ThemeMode.light);
+                                value ? ThemeMode.dark : ThemeMode.light,
+                              );
                             },
-                            activeColor:
-                                Theme.of(context).colorScheme.primary,
+                            activeColor: theme.colorScheme.primary,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Language Switcher
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.language,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          title: Text(
-                            'Language',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
+
+                        const SizedBox(height: 12),
+
+                        // Language Selector
+                        _buildSettingTile(
+                          theme: theme,
+                          icon: Icons.language_rounded,
+                          title: 'Language',
                           trailing: DropdownButton<String>(
                             value: Get.locale?.languageCode ?? 'en',
+                            underline: const SizedBox(),
+                            borderRadius: BorderRadius.circular(12),
+                            style: theme.textTheme.bodyMedium,
                             onChanged: (String? newValue) {
                               if (newValue != null) {
-                                final langController = Get.find<LanguageController>();
+                                final langController =
+                                    Get.find<LanguageController>();
                                 langController.changeLanguage(newValue);
                               }
                             },
@@ -383,111 +328,178 @@ class _ProfilePageState extends State<ProfilePage> {
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      InkWell(
-                        onTap: () {
-                          _launchURL('https://www.buymeacoffee.com/IlhamGhaza');
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 20,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.amber[300]!,
-                                Colors.amber[400]!,
+
+                        const SizedBox(height: 24),
+
+                        // Buy Me a Coffee Button
+                        InkWell(
+                          onTap: () {
+                            controller.launchURL(
+                              'https://www.buymeacoffee.com/IlhamGhaza',
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 20,
+                              horizontal: 24,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFDB58), Color(0xFFFFAA00)],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFFFFAA00,
+                                  ).withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.coffee,
-                                color: Colors.brown[900],
-                                size: 28,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'buy_coffee'.tr,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      color: Colors.brown[900],
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ],
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.coffee_rounded,
+                                  color: Color(0xFF5D4037),
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'buy_coffee'.tr,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: const Color(0xFF5D4037),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ],
-          ),
-        );
+            ),
+          ],
+        ),
+      );
     });
   }
 
-  Widget _buildStatItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-    Color color,
-  ) {
+  Widget _buildSection({
+    required ThemeData theme,
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(title, style: theme.textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingTile({
+    required ThemeData theme,
+    required IconData icon,
+    required String title,
+    required Widget trailing,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
+          trailing,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required ThemeData theme,
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: color),
+          child: Icon(icon, color: color, size: 28),
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        const SizedBox(height: 12),
+        Text(label, style: theme.textTheme.bodySmall),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
   }
-}
-
-class BackgroundPatternPainter extends CustomPainter {
-  final Color color;
-
-  BackgroundPatternPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-
-    for (var i = 0; i < size.width; i += 20) {
-      for (var j = 0; j < size.height; j += 20) {
-        canvas.drawCircle(Offset(i.toDouble(), j.toDouble()), 1, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

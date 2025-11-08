@@ -14,10 +14,7 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
   // List halaman yang akan ditampilkan
-  final List<Widget> _pages = [
-    const HomePage(),
-    const ProfilePage(),
-  ];
+  final List<Widget> _pages = [const HomePage(), const ProfilePage()];
 
   // Animasi perpindahan halaman
   void _onItemTapped(int index) {
@@ -31,15 +28,12 @@ class _MainPageState extends State<MainPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.1),
+              color: colorScheme.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -64,7 +58,7 @@ class _MainPageState extends State<MainPage> {
               ),
               selectedIcon: Icon(
                 Icons.home_rounded,
-                color: colorScheme.primary,
+                color: Colors.white,
               ),
               label: 'nav_home'.tr,
             ),
@@ -77,7 +71,7 @@ class _MainPageState extends State<MainPage> {
               ),
               selectedIcon: Icon(
                 Icons.person_rounded,
-                color: colorScheme.primary,
+                color: Colors.white,
               ),
               label: 'nav_profile'.tr,
             ),

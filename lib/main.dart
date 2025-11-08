@@ -21,22 +21,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize Controllers
     final themeController = Get.put(ThemeController());
-    final languageController = Get.put(LanguageController());
-    
+    Get.put(LanguageController());
+
     return GetMaterialApp(
       title: 'LockFlare',
       debugShowCheckedModeBanner: false,
-      
+
       // Theme configuration
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeController.themeMode,
-      
+
       // Localization configuration
       translations: AppTranslations(),
       locale: Get.deviceLocale, // Use device locale
       fallbackLocale: const Locale('en', 'US'),
-      
+
       home: const MainPage(),
     );
   }

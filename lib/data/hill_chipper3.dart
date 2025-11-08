@@ -1,10 +1,14 @@
 import 'dart:math';
+
+import 'hill_cipher_math.dart';
+
 class HillCipher3 {
   List<List<int>> keyMatrix = [];
   String steps = '';
   HillCipher3(String keyInput) {
     // Validasi dan buat matriks kunci
     keyMatrix = _generateKeyMatrix(keyInput);
+    _validateInvertibility();
   }
   // Fungsi untuk membuat matriks kunci dari input pengguna
   List<List<int>> _generateKeyMatrix(String keyInput) {
@@ -20,6 +24,20 @@ class HillCipher3 {
       keyNumbers.sublist(3, 6),
       keyNumbers.sublist(6, 9),
     ];
+  }
+
+  void _validateInvertibility() {
+    final determinant = _computeDeterminant(keyMatrix);
+    ensureHillDeterminantInvertible(determinant, size: '3x3');
+  }
+
+  int _computeDeterminant(List<List<int>> matrix) {
+    return (matrix[0][0] *
+            (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
+        matrix[0][1] *
+            (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
+        matrix[0][2] *
+            (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]));
   }
   final Map<int, String> substitutionTable = {
     ...{for (int i = 0; i < 26; i++) i: String.fromCharCode(65 + i)}, // A-Z

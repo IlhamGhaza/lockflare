@@ -7,7 +7,7 @@ class ThemeController extends GetxController {
   final _key = 'isDarkMode';
   
   // Observable untuk theme mode
-  final Rx<ThemeMode> _themeMode = ThemeMode.system.obs;
+  final Rx<ThemeMode> _themeMode = ThemeMode.light.obs;
   
   ThemeMode get themeMode => _themeMode.value;
   bool get isDarkMode => _themeMode.value == ThemeMode.dark;

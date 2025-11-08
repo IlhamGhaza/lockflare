@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'hill_cipher_math.dart';
+
 class HillCipher2{
   List<List<int>> keyMatrix = [];
   String steps = '';
@@ -7,6 +9,7 @@ class HillCipher2{
   HillCipher2(String keyInput) {
     // Validasi dan buat matriks kunci
     keyMatrix = _generateKeyMatrix(keyInput);
+    _validateInvertibility();
   }
 
   // Fungsi untuk membuat matriks kunci dari input pengguna
@@ -23,6 +26,12 @@ class HillCipher2{
       keyNumbers.sublist(0, 2),
       keyNumbers.sublist(2, 4),
     ];
+  }
+
+  void _validateInvertibility() {
+    final determinant =
+        keyMatrix[0][0] * keyMatrix[1][1] - keyMatrix[0][1] * keyMatrix[1][0];
+    ensureHillDeterminantInvertible(determinant, size: '2x2');
   }
 
   // Tabel substitusi (sama dengan Hill Cipher 3x3)

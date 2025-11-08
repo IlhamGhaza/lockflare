@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'hill_cipher_math.dart';
+
 class DecryptionHillCipher3 {
   List<List<int>> keyMatrix = [];
   List<List<int>> inverseKeyMatrix = [];
@@ -32,76 +34,61 @@ class DecryptionHillCipher3 {
   // Fungsi untuk menghitung matriks invers modulo 37
   List<List<int>> _calculateInverseMatrix(List<List<int>> matrix) {
     // Hitung determinan matriks
-    int det = ((matrix[0][0] *
-                (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1])) -
-            (matrix[0][1] *
-                (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0])) +
-            (matrix[0][2] *
-                (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]))) %
-        37;
-    if (det < 0) det += 37;
+    final determinant = _computeDeterminant(matrix);
+    ensureHillDeterminantInvertible(determinant, size: '3x3');
+    final det = normalizeHillMod(determinant);
 
     // Cari invers determinan modulo 37
-    int detInverse = _modInverse(det, 37);
+    final detInverse = hillCipherModInverse(det, size: '3x3');
 
     // Hitung matriks kofaktor (adjugate)
     List<List<int>> adjugateMatrix = [
       [
-        ((matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) *
-                detInverse) %
-            37,
-        ((-(matrix[0][1] * matrix[2][2] - matrix[0][2] * matrix[2][1])) *
-                detInverse) %
-            37,
-        ((matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) *
-                detInverse) %
-            37,
+        normalizeHillMod(
+            (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) *
+                detInverse),
+        normalizeHillMod(
+            (-(matrix[0][1] * matrix[2][2] - matrix[0][2] * matrix[2][1])) *
+                detInverse),
+        normalizeHillMod(
+            (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) *
+                detInverse),
       ],
       [
-        ((-(matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0])) *
-                detInverse) %
-            37,
-        ((matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) *
-                detInverse) %
-            37,
-        ((-(matrix[0][0] * matrix[1][2] - matrix[0][2] * matrix[1][0])) *
-                detInverse) %
-            37,
+        normalizeHillMod(
+            (-(matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0])) *
+                detInverse),
+        normalizeHillMod(
+            (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) *
+                detInverse),
+        normalizeHillMod(
+            (-(matrix[0][0] * matrix[1][2] - matrix[0][2] * matrix[1][0])) *
+                detInverse),
       ],
       [
-        ((matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) *
-                detInverse) %
-            37,
-        ((-(matrix[0][0] * matrix[2][1] - matrix[0][1] * matrix[2][0])) *
-                detInverse) %
-            37,
-        ((matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) *
-                detInverse) %
-            37,
+        normalizeHillMod(
+            (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) *
+                detInverse),
+        normalizeHillMod(
+            (-(matrix[0][0] * matrix[2][1] - matrix[0][1] * matrix[2][0])) *
+                detInverse),
+        normalizeHillMod(
+            (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) *
+                detInverse),
       ]
     ];
-
-    // Pastikan semua elemen positif
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        if (adjugateMatrix[i][j] < 0) {
-          adjugateMatrix[i][j] += 37;
-        }
-      }
-    }
 
     steps += "\nInverse Key Matrix: $adjugateMatrix";
     return adjugateMatrix;
   }
 
-  // Fungsi untuk mencari invers modulo (menggunakan algoritma Extended Euclidean)
-  int _modInverse(int a, int m) {
-    for (int x = 1; x < m; x++) {
-      if ((a * x) % m == 1) {
-        return x;
-      }
-    }
-    throw Exception("Invers tidak ditemukan untuk determinan $a.");
+  int _computeDeterminant(List<List<int>> matrix) {
+    return (matrix[0][0] *
+            (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
+        matrix[0][1] *
+            (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
+        matrix[0][2] *
+            (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]));
   }
 
   // Tabel substitusi (sama dengan Hill Cipher 3x3)

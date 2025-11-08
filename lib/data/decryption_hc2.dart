@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'hill_cipher_math.dart';
+
 class DecryptionHillCipher2 {
   List<List<int>> keyMatrix = [];
   List<List<int>> inverseKeyMatrix = [];
@@ -30,11 +32,12 @@ class DecryptionHillCipher2 {
 
   // Fungsi untuk menghitung matriks invers modulo 37
   List<List<int>> _calculateInverseMatrix(List<List<int>> matrix) {
-    int det = (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) % 37;
-    if (det < 0) det += 37;
+    final determinant = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+    ensureHillDeterminantInvertible(determinant, size: '2x2');
+    final det = normalizeHillMod(determinant);
 
     // Cari invers determinan modulo 37
-    int detInverse = _modInverse(det, 37);
+    final detInverse = hillCipherModInverse(det, size: '2x2');
 
     // Tukar elemen untuk matriks adjugate
     List<List<int>> adjugateMatrix = [
@@ -55,16 +58,6 @@ class DecryptionHillCipher2 {
 
     steps += "\nInverse Key Matrix: $adjugateMatrix";
     return adjugateMatrix;
-  }
-
-  // Fungsi untuk mencari invers modulo (menggunakan algoritma Extended Euclidean)
-  int _modInverse(int a, int m) {
-    for (int x = 1; x < m; x++) {
-      if ((a * x) % m == 1) {
-        return x;
-      }
-    }
-    throw Exception("Invers tidak ditemukan untuk determinan $a.");
   }
 
   // Tabel substitusi (sama dengan Hill Cipher 2x2)

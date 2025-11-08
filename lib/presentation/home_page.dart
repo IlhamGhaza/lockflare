@@ -1,683 +1,330 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../config/theme/theme_controller.dart';
 import '../config/theme/theme.dart';
-import '../data/blocking_subtitotion.dart';
-import '../data/decryption_hc2.dart';
-import '../data/decryption_hc3.dart';
-import '../data/hill_chipper2.dart';
-import '../data/hill_chipper3.dart';
-import '../data/permutation_compaction.dart';
-import '../data/substitution_compaction.dart';
-import '../data/subtitution_permutation.dart';
+import 'controllers/algorithm_registry.dart';
+import 'controllers/home_controller.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final TextEditingController _inputController = TextEditingController();
-  final TextEditingController _keyController = TextEditingController();
-  String? _selectedAlgorithm;
-  String _outputText = '';
-  String _steps = '';
-  bool _isProcessing = false;
-
-  void _process() async {
-    // Validasi input
-    if (_inputController.text.isEmpty || _inputController.text.trim().isEmpty) {
-      _showAdaptiveDialog('error_empty_text'.tr);
-      return;
-    }
-
-    // Validasi algoritma terpilih
-    if (_selectedAlgorithm == null || _selectedAlgorithm!.isEmpty) {
-      _showAdaptiveDialog('error_select_algo'.tr);
-      return;
-    }
-
-    // Validasi khusus Hill Cipher
-    if (_selectedAlgorithm!.contains("Hill Cipher")) {
-      if (_keyController.text.isEmpty || _keyController.text.trim().isEmpty) {
-        _showAdaptiveDialog('error_hill_key'.tr);
-        return;
-      }
-
-      // Validasi panjang key untuk Hill Cipher
-      if (_selectedAlgorithm!.contains("3x3") &&
-          _keyController.text.length != 9) {
-        _showAdaptiveDialog('error_hill_3x3_key'.tr);
-        return;
-      }
-
-      if (_selectedAlgorithm!.contains("2x2") &&
-          _keyController.text.length != 4) {
-        _showAdaptiveDialog('error_hill_2x2_key'.tr);
-        return;
-      }
-    } else {
-      // Validasi input dan key untuk algoritma selain Hill Cipher
-      if (_inputController.text.length > 8) {
-        _showAdaptiveDialog('error_text_too_long'.tr);
-        return;
-      }
-
-      if (_keyController.text.isEmpty || _keyController.text.trim().isEmpty) {
-        _showAdaptiveDialog('error_empty_key'.tr);
-        return;
-      }
-
-      if (_keyController.text.length > 8) {
-        _showAdaptiveDialog('error_key_too_long'.tr);
-        return;
-      }
-    }
-
-    setState(() {
-      _isProcessing = true;
-      _outputText = '';
-      _steps = '';
-    });
-
-    // Bersihkan input dan key dari spasi berlebih
-    String input = _inputController.text.trim();
-    String keyInput = _keyController.text.trim();
-    String result = "";
-    String _toBinary(String text) {
-      return text.codeUnits
-          .map((char) => char.toRadixString(2).padLeft(8, '0'))
-          .join();
-    }
-
-    try {
-      switch (_selectedAlgorithm) {
-        case 'Substitusi + Permutasi':
-          final sp = SubstitutionAndPermutation('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-
-          // Tambahkan padding untuk input jika kurang dari 8 karakter
-          input = input.padRight(8, '0');
-
-          try {
-            // Konversi input ke biner (fungsi lokal)
-            String binaryInput = _toBinary(input);
-
-            // Jalankan proses enkripsi
-            String encrypted = sp.encrypt(input);
-
-            // Jalankan proses dekripsi (opsional untuk invers)
-            String decrypted = sp.decrypt(encrypted);
-
-            // Atur hasil ke outputText
-            setState(() {
-              _outputText = "=== Substitusi + Permutasi ===\n"
-                  "Biner Input: $binaryInput\n"
-                  "Hasil Hexa: $encrypted\n"
-                  "Hasil Invers: $decrypted";
-              _steps = sp.steps;
-            });
-          } catch (e) {
-            // Tangani error jika terjadi
-            print(
-                "Error pada algoritma Substitusi + Permutasi: ${e.toString()}");
-            setState(() {
-              _outputText =
-                  "Error pada algoritma Substitusi + Permutasi: ${e.toString()}";
-            });
-          }
-          break;
-
-        case 'Permutasi + Compaction':
-          final pc = PermutationAndCompaction();
-          input = input.padRight(8, '0');
-          keyInput = keyInput.padRight(8, '0');
-          String binaryInput = pc.toBinary(input);
-          String compacted = pc.encrypt(input);
-          setState(() {
-            _outputText =
-                "Biner Input: $binaryInput\nHasil Compacting: $compacted";
-            _steps = pc.steps;
-          });
-          break;
-
-        case 'Blocking + Substitusi':
-          final bs = BlockingAndSubstitution('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-          input = input.padRight(8, '0');
-          keyInput = keyInput.padRight(8, '0');
-          String binaryInput = bs.toBinary(input);
-          String substituted = bs.encrypt(input);
-          setState(() {
-            _outputText =
-                "Biner Input: $binaryInput\nHasil Substitusi: $substituted";
-            _steps = bs.steps;
-          });
-          break;
-
-        case 'Substitusi + Compaction':
-          final sc = SubstitutionAndCompaction('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-          input = input.padRight(8, '0');
-          keyInput = keyInput.padRight(8, '0');
-          String binaryInput = sc.toBinary(input);
-          String compacted = sc.encrypt(input);
-          setState(() {
-            _outputText =
-                "Biner Input: $binaryInput\nHasil Compacting: $compacted";
-            _steps = sc.steps;
-          });
-          break;
-
-        case 'Hill Cipher (2x2)':
-          final hillCipher = HillCipher2(keyInput);
-          result = hillCipher.encrypt(input);
-          setState(() {
-            _outputText = "Hasil Hill Cipher (2x2): $result";
-            _steps = hillCipher.steps;
-          });
-          break;
-
-        case '[Decryption] Hill Cipher (2x2)':
-          final hillCipher = DecryptionHillCipher2(keyInput);
-          result = hillCipher.decrypt(input);
-          setState(() {
-            _outputText = "Hasil Hill Cipher (2x2): $result";
-            _steps = hillCipher.steps;
-          });
-          break;
-
-        case 'Hill Cipher (3x3)':
-          final hillCipher = HillCipher3(keyInput);
-          result = hillCipher.encrypt(input);
-          setState(() {
-            _outputText = "Hasil Hill Cipher (3x3): $result";
-            _steps = hillCipher.steps;
-          });
-          break;
-
-        case '[Decryption] Hill Cipher (3x3)':
-        final hillCipher = DecryptionHillCipher3(keyInput);
-        result = hillCipher.decrypt(input);
-        setState(() {
-          _outputText = "Hasil Hill Cipher (3x3): $result";
-          _steps = hillCipher.steps;
-        });
-        break;
-
-        default:
-          setState(() {
-            _outputText = 'algo_not_recognized'.tr;
-          });
-      }
-    } catch (e) {
-      setState(() {
-        _outputText = "Error: ${e.toString()}";
-      });
-    } finally {
-      setState(() {
-        _isProcessing = false;
-      });
-    }
-  }
-
-  // Fungsi dialog adaptif untuk berbagai platform
-  void _showAdaptiveDialog(String message) {
-    if (kIsWeb || Theme.of(context).platform == TargetPlatform.linux) {
-      // Untuk web dan linux, gunakan showDialog
-      Get.dialog(
-        AlertDialog(
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // Untuk platform lain, gunakan SnackBar
-      Get.snackbar(
-        'Info',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Hitung lebar maksimum untuk responsivitas
-    final maxWidth = MediaQuery.of(context).size.width;
-    final isWideScreen = maxWidth > 600;
-
+    final controller = Get.put(HomeController());
     final themeController = Get.find<ThemeController>();
-    
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
+
     return Obx(() {
       final isDarkMode = themeController.isDarkMode;
       final theme = isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
+
       return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              // Modern App Bar with gradient
-              SliverAppBar(
-                expandedHeight: 180.0,
-                floating: false,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: Text(
-                    'app_title'.tr,
-                    style: TextStyle(
-                      color: theme.colorScheme.onPrimary,
-                      fontSize: isWideScreen ? 20 : 16,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: CustomScrollView(
+          slivers: [
+            // Modern Minimalist App Bar
+            SliverAppBar(
+              expandedHeight: isWideScreen ? 200 : 160,
+              floating: false,
+              pinned: true,
+              stretch: true,
+              backgroundColor: theme.colorScheme.primary,
+              flexibleSpace: FlexibleSpaceBar(
+                centerTitle: true,
+                title: Text(
+                  'app_title'.tr,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
                     ),
                   ),
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.primaryContainer,
-                        ],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Animated Background Pattern (similar to profile page)
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: BackgroundPatternPainter(
-                              color:
-                                  theme.colorScheme.onPrimary.withOpacity(0.1),
-                            ),
-                          ),
-                        ),
-                        Center(
-                          child: Icon(
-                            Icons.security,
-                            size: isWideScreen ? 96 : 64,
-                            color: theme.colorScheme.onPrimary.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
+                  child: Center(
+                    child: Icon(
+                      Icons.lock_outline_rounded,
+                      size: isWideScreen ? 80 : 60,
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
                 ),
               ),
+            ),
 
-              // Content
-              SliverToBoxAdapter(
+            // Content
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isWideScreen ? 24 : 20,
+                vertical: 24,
+              ),
+              sliver: SliverToBoxAdapter(
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 800),
-                    child: Padding(
-                      padding: EdgeInsets.all(isWideScreen ? 16.0 : 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Input Section
-                          Card(
-                            elevation: 4,
-                            shadowColor:
-                                theme.colorScheme.shadow.withOpacity(0.1),
-                            child: Container(
-                              padding: const EdgeInsets.all(20.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: theme.colorScheme.surface,
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Input Section
+                        _buildSection(
+                          theme: theme,
+                          title: 'input_text'.tr,
+                          icon: Icons.edit_note_rounded,
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: controller.inputController,
+                                maxLength: controller.getMaxLength(),
+                                style: theme.textTheme.bodyLarge,
+                                decoration: InputDecoration(
+                                  hintText: controller.getInputHint(),
+                                  counterStyle: theme.textTheme.bodySmall,
+                                  prefixIcon: Icon(
+                                    Icons.text_fields_rounded,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                keyboardType: TextInputType.text,
+                                textInputAction: TextInputAction.next,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.edit,
-                                          color: theme.colorScheme.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'input_text'.tr,
-                                        style: theme.textTheme.titleLarge,
-                                      ),
-                                    ],
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: controller.keyController,
+                                maxLength: controller.getKeyMaxLength(),
+                                style: theme.textTheme.bodyLarge,
+                                decoration: InputDecoration(
+                                  hintText: controller.getKeyHint(),
+                                  counterStyle: theme.textTheme.bodySmall,
+                                  prefixIcon: Icon(
+                                    Icons.key_rounded,
+                                    color: theme.colorScheme.primary,
                                   ),
-                                  const Divider(height: 24),
-                                  TextField(
-                                    controller: _inputController,
-                                    maxLength: _selectedAlgorithm
-                                                ?.contains("Hill Cipher") ??
-                                            false
-                                        ? null
-                                        : 8,
-                                    decoration: InputDecoration(
-                                      hintText: _selectedAlgorithm
-                                                  ?.contains("Hill Cipher") ??
-                                              false
-                                          ? 'enter_text'.tr
-                                          : 'enter_text_max'.tr,
-                                      counterText: _selectedAlgorithm
-                                                  ?.contains("Hill Cipher") ??
-                                              false
-                                          ? null
-                                          : 'max_characters'.tr,
-                                      border: OutlineInputBorder(),
-                                      // Add these properties for better web compatibility
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 14),
+                                ),
+                                keyboardType: TextInputType.number,
+                                textInputAction: TextInputAction.done,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  if (controller.getKeyMaxLength() != null)
+                                    LengthLimitingTextInputFormatter(
+                                      controller.getKeyMaxLength()!,
                                     ),
-                                    // Add these properties for better web input handling
-                                    keyboardType: TextInputType.text,
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                  const SizedBox(
-                                    height: 16,
-                                  ),
-                                  TextField(
-                                    controller: _keyController,
-                                    maxLength: _selectedAlgorithm
-                                                ?.contains("Hill Cipher") ??
-                                            false
-                                        ? (_selectedAlgorithm!.contains("3x3")
-                                            ? 9
-                                            : 4)
-                                        : 8,
-                                    decoration: InputDecoration(
-                                      hintText: _selectedAlgorithm
-                                                  ?.contains("Hill Cipher") ??
-                                              false
-                                          ? 'enter_key_number'.tr
-                                          : 'enter_key_max'.tr,
-                                      counterText: _selectedAlgorithm
-                                                  ?.contains("Hill Cipher") ??
-                                              false
-                                          ? (_keyController.text.length >=
-                                                  (_selectedAlgorithm!
-                                                          .contains("3x3")
-                                                      ? 9
-                                                      : 4)
-                                              ? 'max_input_reached'.tr
-                                              : null)
-                                          : 'max_characters'.tr,
-                                      border: OutlineInputBorder(),
-                                      // Add these properties for better web compatibility
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 14),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    textInputAction: TextInputAction.done,
-                                    inputFormatters: [
-                                      // Filter hanya angka
-                                      FilteringTextInputFormatter.digitsOnly,
-                                      // Batasi panjang karakter sesuai algoritma
-                                      LengthLimitingTextInputFormatter(
-                                        _selectedAlgorithm
-                                                    ?.contains("Hill Cipher") ??
-                                                false
-                                            ? (_selectedAlgorithm!
-                                                    .contains("3x3")
-                                                ? 9
-                                                : 4)
-                                            : 8,
-                                      ),
-                                    ],
-                                    onChanged: (text) {
-                                      if (_selectedAlgorithm
-                                              ?.contains("Hill Cipher") ??
-                                          false) {
-                                        int maxLength =
-                                            _selectedAlgorithm!.contains("3x3")
-                                                ? 9
-                                                : 4;
-                                        if (text.length >= maxLength) {
-                                          setState(() {
-                                            _outputText =
-                                                "Key sudah mencapai maksimum ($maxLength angka untuk ${_selectedAlgorithm!.contains("3x3") ? "3x3" : "2x2"}).";
-                                          });
-                                        }
-                                      }
-                                    },
-                                  ),
                                 ],
                               ),
-                            ),
+                            ],
                           ),
+                        ),
 
-                          const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                          // Algorithm Selection Section
-                          Card(
-                            elevation: 4,
-                            shadowColor:
-                                theme.colorScheme.shadow.withOpacity(0.1),
-                            child: Container(
-                              padding: const EdgeInsets.all(20.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: theme.colorScheme.surface,
+                        // Algorithm Selection
+                        _buildSection(
+                          theme: theme,
+                          title: 'select_algorithm'.tr,
+                          icon: Icons.science_outlined,
+                          child: DropdownButtonFormField<String>(
+                            initialValue: controller.selectedAlgorithm.value,
+                            style: theme.textTheme.bodyLarge,
+                            decoration: InputDecoration(
+                              hintText: 'choose_algorithm'.tr,
+                              prefixIcon: Icon(
+                                Icons.calculate_outlined,
+                                color: theme.colorScheme.primary,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.science,
-                                          color: theme.colorScheme.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'select_algorithm'.tr,
-                                        style: theme.textTheme.titleLarge,
+                            ),
+                            items: AlgorithmRegistry.names.map((algorithm) {
+                                  return DropdownMenuItem(
+                                    value: algorithm,
+                                    child: Text(
+                                      algorithm,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurface,
                                       ),
-                                    ],
-                                  ),
-                                  const Divider(height: 24),
-                                  DropdownButtonFormField<String>(
-                                    value: _selectedAlgorithm,
-                                    decoration: InputDecoration(
-                                      hintText: 'choose_algorithm'.tr,
                                     ),
-                                    items: [
-                                      'Substitusi + Permutasi',
-                                      'Permutasi + Compaction',
-                                      'Blocking + Substitusi',
-                                      'Substitusi + Compaction',
-                                      'Hill Cipher (2x2)',
-                                      '[Decryption] Hill Cipher (2x2)',
-                                      'Hill Cipher (3x3)',
-                                      '[Decryption] Hill Cipher (3x3)',
-                                    ].map((algorithm) {
-                                      return DropdownMenuItem(
-                                        value: algorithm,
-                                        child: Text(
-                                          algorithm,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedAlgorithm = value;
-                                      });
-                                    },
-                                    isExpanded:
-                                        true, // Membuat dropdown lebih responsif
-                                  ),
-                                ],
-                              ),
-                            ),
+                                  );
+                                }).toList(),
+                            onChanged: (value) {
+                              controller.selectedAlgorithm.value = value;
+                            },
+                            isExpanded: true,
                           ),
+                        ),
 
-                          const SizedBox(height: 24),
+                        const SizedBox(height: 32),
 
-                          // Process Button
-                          ElevatedButton(
-                            onPressed: _process,
+                        // Process Button
+                        SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: controller.isProcessing.value
+                                ? null
+                                : controller.process,
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
                               backgroundColor: theme.colorScheme.primary,
-                              foregroundColor: theme.colorScheme.onPrimary,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.5),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              elevation: 4,
+                              elevation: 0,
                             ),
-                            child: _isProcessing
+                            child: controller.isProcessing.value
                                 ? const SizedBox(
                                     height: 24,
                                     width: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.5,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
-                                : Text(
-                                    'process'.tr,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Output Section
-                          Card(
-                            elevation: 4,
-                            shadowColor:
-                                theme.colorScheme.shadow.withValues(alpha: 0.1),
-                            child: Container(
-                              padding: const EdgeInsets.all(20.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: theme.colorScheme.surface,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.output,
-                                          color: theme.colorScheme.primary),
+                                      const Icon(
+                                        Icons.play_arrow_rounded,
+                                        size: 24,
+                                      ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'result'.tr,
-                                        style: theme.textTheme.titleLarge,
+                                        'process'.tr,
+                                        style: theme.textTheme.labelLarge,
                                       ),
                                     ],
                                   ),
-                                  const Divider(height: 24),
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primaryContainer
-                                          .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: theme
-                                            .colorScheme.primaryContainer
-                                            .withOpacity(0.2),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      _outputText.isEmpty
-                                          ? 'results_appear'.tr
-                                          : _outputText,
-                                      style: theme.textTheme.bodyLarge,
-                                    ),
-                                  ),
-                                ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Output Section
+                        _buildSection(
+                          theme: theme,
+                          title: 'result'.tr,
+                          icon: Icons.output_rounded,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.05,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.1,
+                                ),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              controller.outputText.value.isEmpty
+                                  ? 'results_appear'.tr
+                                  : controller.outputText.value,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontFamily: 'monospace',
+                                height: 1.6,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          Card(
-                            elevation: 4,
-                            shadowColor:
-                                theme.colorScheme.shadow.withOpacity(0.1),
-                            child: Container(
-                              padding: const EdgeInsets.all(20.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: theme.colorScheme.surface,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Steps Section
+                        _buildSection(
+                          theme: theme,
+                          title: 'steps'.tr,
+                          icon: Icons.list_alt_rounded,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.secondary.withValues(
+                                alpha: 0.05,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.list_alt,
-                                          color: theme.colorScheme.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'steps'.tr,
-                                        style: theme.textTheme.titleLarge,
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(height: 24),
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: theme
-                                          .colorScheme.secondaryContainer
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: theme
-                                            .colorScheme.secondaryContainer
-                                            .withOpacity(0.2),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      _steps.isEmpty
-                                          ? 'steps_appear'.tr
-                                          : _steps,
-                                      style: theme.textTheme.bodyMedium,
-                                    ),
-                                  ),
-                                ],
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: theme.colorScheme.secondary.withValues(
+                                  alpha: 0.1,
+                                ),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              controller.steps.value.isEmpty
+                                  ? 'steps_appear'.tr
+                                  : controller.steps.value,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontFamily: 'monospace',
+                                height: 1.6,
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+
+                        const SizedBox(height: 40),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
-        );
+            ),
+          ],
+        ),
+      );
     });
   }
-}
 
-// Background Pattern Painter (copied from profile page for consistency)
-class BackgroundPatternPainter extends CustomPainter {
-  final Color color;
-
-  BackgroundPatternPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-
-    for (var i = 0; i < size.width; i += 20) {
-      for (var j = 0; j < size.height; j += 20) {
-        canvas.drawCircle(Offset(i.toDouble(), j.toDouble()), 1, paint);
-      }
-    }
+  Widget _buildSection({
+    required ThemeData theme,
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(title, style: theme.textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
