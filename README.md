@@ -27,28 +27,32 @@ The project is organized into several directories and files to maintain modulari
 ```
 lib/
 ├── config/
+│   ├── localization/
+│   │   ├── app_translations.dart
+│   │   └── language_controller.dart
 │   └── theme/
-│       ├── bloc/
-│       │   └── theme_cubit.dart
+│       ├── theme_controller.dart
 │       └── theme.dart
 ├── data/
-│   ├── blocking_substitution.dart
+│   ├── blocking_subtitotion.dart
 │   ├── decryption_hc2.dart
 │   ├── decryption_hc3.dart
 │   ├── github_service.dart
-│   ├── hill_cipher2.dart
-│   ├── hill_cipher3.dart
+│   ├── hill_chipper2.dart
+│   ├── hill_chipper3.dart
 │   ├── permutation_compaction.dart
 │   ├── substitution_compaction.dart
-│   └── substitution_permutation.dart
+│   └── subtitution_permutation.dart
 ├── presentation/
 │   ├── home_page.dart
-│   ├── profile_page.dart
+│   └── profile_page.dart
 ├── main_page.dart
-└── main.dart    
+└── main.dart
 ```
 
-- **lib/config/theme/**: Contains theme-related configurations, including the `theme_cubit.dart` for managing theme states and `theme.dart` for defining theme data.
+- **lib/config/localization/**: Houses GetX translation maps and the `LanguageController`, enabling runtime language switching and persistence.
+
+- **lib/config/theme/**: Contains GetX theme configuration, including `theme_controller.dart` for reactive theme management and `theme.dart` for Material theme data.
 
 - **lib/data/**: Houses the implementations of various cryptographic algorithms, each encapsulated in its respective Dart file, facilitating easy maintenance and scalability.
 
@@ -91,6 +95,11 @@ Before running the application, ensure that the following tools are installed on
 ## Usage
 
 Upon launching the application, users can navigate through different sections, each dedicated to a specific cryptographic algorithm. Interactive interfaces allow users to input data, apply encryption techniques, and observe the results, thereby enhancing their understanding of cryptographic processes.
+
+### Theme & Localization
+
+- Toggle between light and dark themes via the profile page. The preference is persisted using GetStorage.
+- Switch between English (`en`) and Indonesian (`id`) at runtime using the language selector on the profile page. All texts use GetX `.tr` keys, ensuring instant localization.
 
 ## Contributing
 

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:math' as math;
-import '../config/theme/bloc/theme_cubit.dart';
+import 'package:get/get.dart';
+import '../config/theme/theme_controller.dart';
 import '../config/theme/theme.dart';
 import '../data/blocking_subtitotion.dart';
 import '../data/decryption_hc2.dart';
@@ -32,52 +31,49 @@ class _HomePageState extends State<HomePage> {
   void _process() async {
     // Validasi input
     if (_inputController.text.isEmpty || _inputController.text.trim().isEmpty) {
-      _showAdaptiveDialog("Masukkan teks terlebih dahulu.");
+      _showAdaptiveDialog('error_empty_text'.tr);
       return;
     }
 
     // Validasi algoritma terpilih
     if (_selectedAlgorithm == null || _selectedAlgorithm!.isEmpty) {
-      _showAdaptiveDialog("Pilih algoritma terlebih dahulu.");
+      _showAdaptiveDialog('error_select_algo'.tr);
       return;
     }
 
     // Validasi khusus Hill Cipher
     if (_selectedAlgorithm!.contains("Hill Cipher")) {
       if (_keyController.text.isEmpty || _keyController.text.trim().isEmpty) {
-        _showAdaptiveDialog(
-            "Masukkan key (9 angka untuk 3x3 atau 4 angka untuk 2x2) untuk Hill Cipher.");
+        _showAdaptiveDialog('error_hill_key'.tr);
         return;
       }
 
       // Validasi panjang key untuk Hill Cipher
       if (_selectedAlgorithm!.contains("3x3") &&
           _keyController.text.length != 9) {
-        _showAdaptiveDialog("Key untuk Hill Cipher 3x3 maksimal 9 angka.");
+        _showAdaptiveDialog('error_hill_3x3_key'.tr);
         return;
       }
 
       if (_selectedAlgorithm!.contains("2x2") &&
           _keyController.text.length != 4) {
-        _showAdaptiveDialog("Key untuk Hill Cipher 2x2 maksimal 4 angka.");
+        _showAdaptiveDialog('error_hill_2x2_key'.tr);
         return;
       }
     } else {
       // Validasi input dan key untuk algoritma selain Hill Cipher
       if (_inputController.text.length > 8) {
-        _showAdaptiveDialog(
-            "Input terlalu panjang! Maksimum 8 karakter (64-bit) untuk algoritma ini.");
+        _showAdaptiveDialog('error_text_too_long'.tr);
         return;
       }
 
       if (_keyController.text.isEmpty || _keyController.text.trim().isEmpty) {
-        _showAdaptiveDialog("Masukkan key untuk algoritma ini.");
+        _showAdaptiveDialog('error_empty_key'.tr);
         return;
       }
 
       if (_keyController.text.length > 8) {
-        _showAdaptiveDialog(
-            "Key terlalu panjang! Maksimum 8 karakter (64-bit) untuk algoritma ini.");
+        _showAdaptiveDialog('error_key_too_long'.tr);
         return;
       }
     }
@@ -212,7 +208,7 @@ class _HomePageState extends State<HomePage> {
 
         default:
           setState(() {
-            _outputText = "Algoritma tidak dikenali.";
+            _outputText = 'algo_not_recognized'.tr;
           });
       }
     } catch (e) {
@@ -230,13 +226,12 @@ class _HomePageState extends State<HomePage> {
   void _showAdaptiveDialog(String message) {
     if (kIsWeb || Theme.of(context).platform == TargetPlatform.linux) {
       // Untuk web dan linux, gunakan showDialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
+      Get.dialog(
+        AlertDialog(
           content: Text(message),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Get.back(),
               child: const Text('OK'),
             ),
           ],
@@ -244,8 +239,10 @@ class _HomePageState extends State<HomePage> {
       );
     } else {
       // Untuk platform lain, gunakan SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+      Get.snackbar(
+        'Info',
+        message,
+        snackPosition: SnackPosition.BOTTOM,
       );
     }
   }
@@ -256,11 +253,12 @@ class _HomePageState extends State<HomePage> {
     final maxWidth = MediaQuery.of(context).size.width;
     final isWideScreen = maxWidth > 600;
 
-    return BlocBuilder<ThemeCubit, ThemeMode>(
-      builder: (context, themeMode) {
-        final isDarkMode = themeMode == ThemeMode.dark;
-        final theme = isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
-        return Scaffold(
+    final themeController = Get.find<ThemeController>();
+    
+    return Obx(() {
+      final isDarkMode = themeController.isDarkMode;
+      final theme = isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
+      return Scaffold(
           body: CustomScrollView(
             slivers: [
               // Modern App Bar with gradient
@@ -270,7 +268,7 @@ class _HomePageState extends State<HomePage> {
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
-                    'Modern Cryptography',
+                    'app_title'.tr,
                     style: TextStyle(
                       color: theme.colorScheme.onPrimary,
                       fontSize: isWideScreen ? 20 : 16,
@@ -341,7 +339,7 @@ class _HomePageState extends State<HomePage> {
                                           color: theme.colorScheme.primary),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Input Text',
+                                        'input_text'.tr,
                                         style: theme.textTheme.titleLarge,
                                       ),
                                     ],
@@ -358,13 +356,13 @@ class _HomePageState extends State<HomePage> {
                                       hintText: _selectedAlgorithm
                                                   ?.contains("Hill Cipher") ??
                                               false
-                                          ? "Enter text here..."
-                                          : "Enter text (max 8 characters)...",
+                                          ? 'enter_text'.tr
+                                          : 'enter_text_max'.tr,
                                       counterText: _selectedAlgorithm
                                                   ?.contains("Hill Cipher") ??
                                               false
                                           ? null
-                                          : "Max 8 characters",
+                                          : 'max_characters'.tr,
                                       border: OutlineInputBorder(),
                                       // Add these properties for better web compatibility
                                       isDense: true,
@@ -391,8 +389,8 @@ class _HomePageState extends State<HomePage> {
                                       hintText: _selectedAlgorithm
                                                   ?.contains("Hill Cipher") ??
                                               false
-                                          ? "Masukkan key berupa angka..."
-                                          : "Masukkan key (max 8 karakter)...",
+                                          ? 'enter_key_number'.tr
+                                          : 'enter_key_max'.tr,
                                       counterText: _selectedAlgorithm
                                                   ?.contains("Hill Cipher") ??
                                               false
@@ -401,9 +399,9 @@ class _HomePageState extends State<HomePage> {
                                                           .contains("3x3")
                                                       ? 9
                                                       : 4)
-                                              ? "Sudah mencapai maksimum input!"
+                                              ? 'max_input_reached'.tr
                                               : null)
-                                          : "Max 8 karakter",
+                                          : 'max_characters'.tr,
                                       border: OutlineInputBorder(),
                                       // Add these properties for better web compatibility
                                       isDense: true,
@@ -471,7 +469,7 @@ class _HomePageState extends State<HomePage> {
                                           color: theme.colorScheme.primary),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Select Algorithm',
+                                        'select_algorithm'.tr,
                                         style: theme.textTheme.titleLarge,
                                       ),
                                     ],
@@ -479,8 +477,8 @@ class _HomePageState extends State<HomePage> {
                                   const Divider(height: 24),
                                   DropdownButtonFormField<String>(
                                     value: _selectedAlgorithm,
-                                    decoration: const InputDecoration(
-                                      hintText: "Choose an algorithm",
+                                    decoration: InputDecoration(
+                                      hintText: 'choose_algorithm'.tr,
                                     ),
                                     items: [
                                       'Substitusi + Permutasi',
@@ -537,9 +535,9 @@ class _HomePageState extends State<HomePage> {
                                           Colors.white),
                                     ),
                                   )
-                                : const Text(
-                                    "Process",
-                                    style: TextStyle(
+                                : Text(
+                                    'process'.tr,
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -568,7 +566,7 @@ class _HomePageState extends State<HomePage> {
                                           color: theme.colorScheme.primary),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Result',
+                                        'result'.tr,
                                         style: theme.textTheme.titleLarge,
                                       ),
                                     ],
@@ -588,7 +586,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     child: Text(
                                       _outputText.isEmpty
-                                          ? "Results will appear here..."
+                                          ? 'results_appear'.tr
                                           : _outputText,
                                       style: theme.textTheme.bodyLarge,
                                     ),
@@ -617,7 +615,7 @@ class _HomePageState extends State<HomePage> {
                                           color: theme.colorScheme.primary),
                                       const SizedBox(width: 8),
                                       Text(
-                                        'Steps',
+                                        'steps'.tr,
                                         style: theme.textTheme.titleLarge,
                                       ),
                                     ],
@@ -638,7 +636,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     child: Text(
                                       _steps.isEmpty
-                                          ? "Steps will appear here after processing..."
+                                          ? 'steps_appear'.tr
                                           : _steps,
                                       style: theme.textTheme.bodyMedium,
                                     ),
@@ -656,8 +654,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         );
-      },
-    );
+    });
   }
 }
 

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../config/theme/bloc/theme_cubit.dart';
+import '../config/theme/theme_controller.dart';
 import '../config/theme/theme.dart';
+import '../config/localization/language_controller.dart';
 import '../data/github_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -61,11 +62,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemeCubit, ThemeMode>(
-      builder: (context, themeMode) {
-        final isDarkMode = themeMode == ThemeMode.dark;
-        final theme = isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
-        return Scaffold(
+    final themeController = Get.find<ThemeController>();
+    
+    return Obx(() {
+      final isDarkMode = themeController.isDarkMode;
+      final theme = isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme;
+      return Scaffold(
           body: CustomScrollView(
             slivers: [
               SliverAppBar(
@@ -179,19 +181,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'About Me',
+                                  'about_me'.tr,
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ],
                             ),
                             const Divider(height: 24),
                             Text(
-                              'Software Developer | Flutter Enthusiast',
+                              'job_title'.tr,
                               style: Theme.of(context).textTheme.bodyLarge,
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Passionate about creating beautiful and functional mobile applications using Flutter.',
+                              'bio'.tr,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
@@ -214,21 +216,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'GitHub Stats',
+                                  'github_stats'.tr,
                                   style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ],
                             ),
                             const Divider(height: 24),
                             _isLoading
-                                ? const Center(
+                                ? Center(
                                     child: Padding(
-                                      padding: EdgeInsets.all(20.0),
+                                      padding: const EdgeInsets.all(20.0),
                                       child: Column(
                                         children: [
-                                          CircularProgressIndicator(),
-                                          SizedBox(height: 16),
-                                          Text('Loading GitHub stats...'),
+                                          const CircularProgressIndicator(),
+                                          const SizedBox(height: 16),
+                                          Text('loading_stats'.tr),
                                         ],
                                       ),
                                     ),
@@ -238,7 +240,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         child: Column(
                                           children: [
                                             Text(
-                                              'Error loading stats',
+                                              'error_loading_stats'.tr,
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodyMedium
@@ -249,7 +251,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                             ),
                                             TextButton(
                                               onPressed: _loadGitHubStats,
-                                              child: const Text('Retry'),
+                                              child: Text('retry'.tr),
                                             ),
                                           ],
                                         ),
@@ -261,7 +263,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           _buildStatItem(
                                             context,
                                             Icons.star_border,
-                                            'Stars',
+                                            'stars'.tr,
                                             _githubStats?['stars'].toString() ??
                                                 '0',
                                             theme.colorScheme.primary,
@@ -269,7 +271,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           _buildStatItem(
                                             context,
                                             Icons.source_outlined,
-                                            'Repositories',
+                                            'repositories'.tr,
                                             _githubStats?['public_repos']
                                                     .toString() ??
                                                 '0',
@@ -278,7 +280,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           _buildStatItem(
                                             context,
                                             Icons.people_outline,
-                                            'Followers',
+                                            'followers'.tr,
                                             _githubStats?['followers']
                                                     .toString() ??
                                                 '0',
@@ -311,78 +313,78 @@ class _ProfilePageState extends State<ProfilePage> {
                           leading: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
                             child: Icon(
-                              themeMode == ThemeMode.dark
+                              isDarkMode
                                   ? Icons.dark_mode
                                   : Icons.light_mode,
-                              key: ValueKey(themeMode),
+                              key: ValueKey(isDarkMode),
                               color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                           title: Text(
-                            'Dark Mode',
+                            'dark_mode'.tr,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          trailing: BlocBuilder<ThemeCubit, ThemeMode>(
-                            builder: (context, themeMode) {
-                              return Switch(
-                                value: themeMode == ThemeMode.dark,
-                                onChanged: (value) {
-                                  context.read<ThemeCubit>().updateTheme(
-                                      value ? ThemeMode.dark : ThemeMode.light);
-                                },
-                                activeColor:
-                                    Theme.of(context).colorScheme.primary,
-                              );
+                          trailing: Switch(
+                            value: isDarkMode,
+                            onChanged: (value) {
+                              themeController.setThemeMode(
+                                  value ? ThemeMode.dark : ThemeMode.light);
                             },
+                            activeColor:
+                                Theme.of(context).colorScheme.primary,
                           ),
                         ),
-                      //   child: ListTile(
-                      //     leading: AnimatedSwitcher(
-                      //       duration: const Duration(milliseconds: 300),
-                      //       child: Icon(
-                      //         themeMode == ThemeMode.dark
-                      //             ? Icons.dark_mode
-                      //             : (themeMode == ThemeMode.light
-                      //                 ? Icons.light_mode
-                      //                 : Icons.brightness_auto),
-                      //         key: ValueKey(themeMode),
-                      //         color: Theme.of(context).colorScheme.primary,
-                      //       ),
-                      //     ),
-                      //     title: Text(
-                      //       'Theme Mode',
-                      //       style: Theme.of(context).textTheme.titleMedium,
-                      //     ),
-                      //     trailing: BlocBuilder<ThemeCubit, ThemeMode>(
-                      //       builder: (context, themeMode) {
-                      //         return DropdownButton<ThemeMode>(
-                      //           value: themeMode,
-                      //           onChanged: (ThemeMode? newThemeMode) {
-                      //             if (newThemeMode != null) {
-                      //               context
-                      //                   .read<ThemeCubit>()
-                      //                   .updateTheme(newThemeMode);
-                      //             }
-                      //           },
-                      //           items: const [
-                      //             DropdownMenuItem(
-                      //               value: ThemeMode.system,
-                      //               child: Text('System'),
-                      //             ),
-                      //             DropdownMenuItem(
-                      //               value: ThemeMode.light,
-                      //               child: Text('Light'),
-                      //             ),
-                      //             DropdownMenuItem(
-                      //               value: ThemeMode.dark,
-                      //               child: Text('Dark'),
-                      //             ),
-                      //           ],
-                      //         );
-                      //       },
-                      //     ),
-                      //   ),
                       ),
+                      const SizedBox(height: 16),
+                      // Language Switcher
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.language,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          title: Text(
+                            'Language',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          trailing: DropdownButton<String>(
+                            value: Get.locale?.languageCode ?? 'en',
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                final langController = Get.find<LanguageController>();
+                                langController.changeLanguage(newValue);
+                              }
+                            },
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'en',
+                                child: Text('English'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'id',
+                                child: Text('Indonesia'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       InkWell(
                         onTap: () {
                           _launchURL('https://www.buymeacoffee.com/IlhamGhaza');
@@ -411,7 +413,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               const SizedBox(width: 12),
                               Text(
-                                'Buy Me a Coffee',
+                                'buy_coffee'.tr,
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleLarge
@@ -431,8 +433,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
         );
-      },
-    );
+    });
   }
 
   Widget _buildStatItem(

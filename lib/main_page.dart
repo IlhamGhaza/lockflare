@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'presentation/profile_page.dart';
 import 'presentation/home_page.dart';
 
@@ -65,7 +66,7 @@ class _MainPageState extends State<MainPage> {
                 Icons.home_rounded,
                 color: colorScheme.primary,
               ),
-              label: 'Home',
+              label: 'nav_home'.tr,
             ),
             NavigationDestination(
               icon: Icon(
@@ -78,7 +79,7 @@ class _MainPageState extends State<MainPage> {
                 Icons.person_rounded,
                 color: colorScheme.primary,
               ),
-              label: 'Profile',
+              label: 'nav_profile'.tr,
             ),
           ],
         ),
