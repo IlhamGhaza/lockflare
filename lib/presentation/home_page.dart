@@ -209,67 +209,34 @@ class HomePage extends StatelessWidget {
                         const SizedBox(height: 32),
 
                         // Output Section
-                        _buildSection(
+                        _buildResultSection(
                           theme: theme,
                           title: 'result'.tr,
                           icon: Icons.output_rounded,
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.05,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: theme.colorScheme.primary.withValues(
-                                  alpha: 0.1,
-                                ),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              controller.outputText.value.isEmpty
-                                  ? 'results_appear'.tr
-                                  : controller.outputText.value,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontFamily: 'monospace',
-                                height: 1.6,
-                              ),
-                            ),
+                          content: controller.outputText.value,
+                          emptyMessage: 'results_appear'.tr,
+                          onCopy: () => _copyToClipboard(
+                            context,
+                            controller.outputText.value,
+                            'result_copied'.tr,
                           ),
                         ),
 
                         const SizedBox(height: 20),
 
                         // Steps Section
-                        _buildSection(
+                        _buildResultSection(
                           theme: theme,
                           title: 'steps'.tr,
                           icon: Icons.list_alt_rounded,
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.secondary.withValues(
-                                alpha: 0.05,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: theme.colorScheme.secondary.withValues(
-                                  alpha: 0.1,
-                                ),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              controller.steps.value.isEmpty
-                                  ? 'steps_appear'.tr
-                                  : controller.steps.value,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontFamily: 'monospace',
-                                height: 1.6,
-                              ),
-                            ),
+                          content: controller.steps.value,
+                          emptyMessage: 'steps_appear'.tr,
+                          onCopy: () => _copyToClipboard(
+                            context,
+                            controller.steps.value,
+                            'steps_copied'.tr,
                           ),
+                          isSecondary: true,
                         ),
 
                         const SizedBox(height: 40),
@@ -298,9 +265,10 @@ class HomePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
             offset: const Offset(0, 4),
+            spreadRadius: 0,
           ),
         ],
       ),
@@ -310,20 +278,173 @@ class HomePage extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+                child: Icon(icon, color: theme.colorScheme.primary, size: 22),
               ),
-              const SizedBox(width: 12),
-              Text(title, style: theme.textTheme.titleMedium),
+              const SizedBox(width: 14),
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.3,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
           child,
         ],
+      ),
+    );
+  }
+
+  Widget _buildResultSection({
+    required ThemeData theme,
+    required String title,
+    required IconData icon,
+    required String content,
+    required String emptyMessage,
+    required VoidCallback onCopy,
+    bool isSecondary = false,
+  }) {
+    final isEmpty = content.isEmpty;
+    final colorScheme = isSecondary ? theme.colorScheme.secondary : theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: colorScheme, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+              if (!isEmpty)
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onCopy,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: colorScheme.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.content_copy_rounded,
+                            color: colorScheme,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'copy'.tr,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: colorScheme,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colorScheme.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.withValues(alpha: 0.15),
+                width: 1.5,
+              ),
+            ),
+            child: SelectableText(
+              isEmpty ? emptyMessage : content,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontFamily: 'monospace',
+                height: 1.6,
+                color: isEmpty
+                    ? theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5)
+                    : theme.textTheme.bodyMedium?.color,
+                fontSize: isSecondary ? 13 : 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyToClipboard(BuildContext context, String text, String message) {
+    if (text.isEmpty) return;
+
+    Clipboard.setData(ClipboardData(text: text));
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

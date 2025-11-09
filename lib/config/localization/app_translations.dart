@@ -27,6 +27,9 @@ class AppTranslations extends Translations {
           'results_appear': 'Results will appear here...',
           'steps': 'Steps',
           'steps_appear': 'Steps will appear here after processing...',
+          'copy': 'Copy',
+          'result_copied': 'Result copied to clipboard!',
+          'steps_copied': 'Steps copied to clipboard!',
           
           // Algorithms
           'algo_sub_perm': 'Substitution + Permutation',
@@ -97,6 +100,9 @@ class AppTranslations extends Translations {
           'results_appear': 'Hasil akan muncul di sini...',
           'steps': 'Langkah-langkah',
           'steps_appear': 'Langkah-langkah akan muncul di sini setelah diproses...',
+          'copy': 'Salin',
+          'result_copied': 'Hasil disalin ke clipboard!',
+          'steps_copied': 'Langkah-langkah disalin ke clipboard!',
           
           // Algorithms
           'algo_sub_perm': 'Substitusi + Permutasi',
